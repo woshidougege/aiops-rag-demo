@@ -514,7 +514,7 @@ java.lang.OutOfMemoryError: Java heap space
 
                 <div class="cases-section">
                     <h3 style="margin-bottom: 15px; color: #667eea;">📚 相似历史案例</h3>
-                    <div id="retrievedCases"></div>
+                    <div id="casesContainer"></div>
                 </div>
             </div>
         </div>
@@ -613,6 +613,7 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
             }
         });
 
+        // 流式诊断函数（Cursor 风格）
         async function diagnose() {
             const errorLog = document.getElementById('errorLog').value.trim();
             
@@ -621,16 +622,23 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
                 return;
             }
 
-            // 显示加载
+            // 显示加载和思考区域
             document.getElementById('loading').classList.add('show');
             document.getElementById('resultSection').classList.remove('show');
             document.getElementById('diagnoseBtn').disabled = true;
+            
+            // 清空之前的结果和思考盒子
+            document.getElementById('diagnosis').innerHTML = '';
+            document.getElementById('rootCause').innerHTML = '';
+            document.getElementById('solution').innerHTML = '';
+            const oldThinkingBox = document.querySelector('.thinking-box');
+            if (oldThinkingBox) oldThinkingBox.remove();
 
             try {
-                // 根据模式选择使用的 API
                 const useTools = (currentMode === 'agent');
                 
-                const response = await fetch('/api/diagnose', {
+                // 使用 fetch 的流式 API
+                const response = await fetch('/api/diagnose/stream', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -645,8 +653,33 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
                     throw new Error('诊断请求失败');
                 }
 
-                const result = await response.json();
-                displayResult(result);
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let diagnosisBuffer = '';
+
+                // 读取流式数据
+                while (true) {
+                    const {done, value} = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, {stream: true});
+                    const lines = buffer.split('\n\n');
+                    buffer = lines.pop(); // 保留不完整的行
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+                            handleStreamEvent(data, diagnosisBuffer);
+                            
+                            if (data.type === 'diagnosis') {
+                                diagnosisBuffer += data.content;
+                            } else if (data.type === 'result_start') {
+                                diagnosisBuffer = '';
+                            }
+                        }
+                    }
+                }
 
             } catch (error) {
                 alert('诊断失败: ' + error.message);
@@ -654,6 +687,158 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
                 document.getElementById('loading').classList.remove('show');
                 document.getElementById('diagnoseBtn').disabled = false;
             }
+        }
+
+        // 处理流式事件（Cursor 风格 - 完整版）
+        function handleStreamEvent(data) {
+            if (data.type === 'thinking') {
+                // 显示思考过程（独立的思考盒子）
+                let thinkingBox = document.querySelector('.thinking-box');
+                if (!thinkingBox) {
+                    thinkingBox = document.createElement('div');
+                    thinkingBox.className = 'thinking-box';
+                    thinkingBox.style.cssText = `
+                        background: #f8f9fa;
+                        border-left: 4px solid #667eea;
+                        padding: 15px;
+                        margin: 20px 0;
+                        border-radius: 8px;
+                        font-family: monospace;
+                        font-size: 13px;
+                        color: #555;
+                        white-space: pre-wrap;
+                        max-height: 300px;
+                        overflow-y: auto;
+                    `;
+                    
+                    // 插入到主容器顶部
+                    const mainCard = document.querySelector('.main-card');
+                    const inputSection = document.querySelector('.input-section');
+                    mainCard.insertBefore(thinkingBox, inputSection.nextSibling);
+                }
+                thinkingBox.textContent += data.content + '\n';
+                thinkingBox.scrollTop = thinkingBox.scrollHeight; // 自动滚动到底部
+                
+            } else if (data.type === 'tool_call') {
+                // Agent 模式：显示工具调用
+                const thinkingBox = document.querySelector('.thinking-box');
+                if (thinkingBox) {
+                    const cmd = data.args.command || JSON.stringify(data.args);
+                    thinkingBox.textContent += `\n🔧 执行命令: ${cmd}\n`;
+                    thinkingBox.scrollTop = thinkingBox.scrollHeight;
+                }
+                
+            } else if (data.type === 'tool_result') {
+                // Agent 模式：显示工具结果
+                const thinkingBox = document.querySelector('.thinking-box');
+                if (thinkingBox) {
+                    const result = data.content.substring(0, 300); // 显示前300字符
+                    thinkingBox.textContent += `✓ 命令结果:\n${result}\n`;
+                    thinkingBox.scrollTop = thinkingBox.scrollHeight;
+                }
+                
+            } else if (data.type === 'llm_chunk') {
+                // LLM 流式输出（打字机效果）
+                const diagnosisDiv = document.getElementById('diagnosis');
+                let content = data.content;
+                
+                // 过滤掉 <think> 标签内容（不显示 LLM 的内部思考）
+                content = content.replace(/<think>[\s\S]*?<\/think>/gi, '');
+                content = content.replace(/<think>/gi, '').replace(/<\/think>/gi, '');
+                
+                if (content.trim()) {
+                    diagnosisDiv.textContent += content;
+                }
+                
+            } else if (data.type === 'result_start') {
+                // 开始显示结果
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('resultSection').classList.add('show');
+                
+            } else if (data.type === 'diagnosis') {
+                // 打字机效果显示诊断
+                const diagnosisDiv = document.getElementById('diagnosis');
+                diagnosisDiv.textContent += data.content;
+                
+            } else if (data.type === 'root_cause') {
+                document.getElementById('rootCause').textContent = data.content;
+                
+            } else if (data.type === 'solution') {
+                const solutionDiv = document.getElementById('solution');
+                if (Array.isArray(data.content)) {
+                    solutionDiv.innerHTML = data.content.map((s, i) => `${i + 1}. ${s}`).join('<br>');
+                } else {
+                    solutionDiv.textContent = data.content;
+                }
+                
+            } else if (data.type === 'confidence') {
+                const conf = data.value;
+                const confElement = document.getElementById('confidence');
+                confElement.textContent = `${(conf * 100).toFixed(0)}%`;
+                confElement.className = 'confidence ' + (conf > 0.7 ? 'high' : conf > 0.4 ? 'medium' : 'low');
+                
+            } else if (data.type === 'cases') {
+                displayCases(data.data);
+                
+            } else if (data.type === 'final_result') {
+                // 显示最终结构化结果
+                const result = data.data;
+                document.getElementById('rootCause').textContent = result.root_cause || '';
+                
+                const solutionDiv = document.getElementById('solution');
+                if (Array.isArray(result.solution)) {
+                    solutionDiv.innerHTML = result.solution.map((s, i) => `${i + 1}. ${s}`).join('<br>');
+                } else {
+                    solutionDiv.textContent = result.solution || '';
+                }
+                
+                const conf = result.confidence || 0.5;
+                const confElement = document.getElementById('confidence');
+                confElement.textContent = `${(conf * 100).toFixed(0)}%`;
+                confElement.className = 'confidence ' + (conf > 0.7 ? 'high' : conf > 0.4 ? 'medium' : 'low');
+                
+                if (result.retrieved_cases) {
+                    displayCases(result.retrieved_cases);
+                }
+                
+            } else if (data.type === 'done') {
+                // 诊断完成，可以选择保留或移除思考盒子
+                // 这里保留思考过程，让用户可以回顾
+                const thinkingBox = document.querySelector('.thinking-box');
+                if (thinkingBox) {
+                    thinkingBox.style.borderColor = '#28a745'; // 变成绿色表示完成
+                    thinkingBox.textContent += '\n✅ 诊断完成\n';
+                }
+            }
+        }
+
+        function displayCases(cases) {
+            // 显示相似案例
+            const casesContainer = document.getElementById('casesContainer');
+            if (!casesContainer) return;
+            
+            casesContainer.innerHTML = '';
+            
+            if (!cases || cases.length === 0) {
+                casesContainer.innerHTML = '<p style="color: #999;">暂无相似案例</p>';
+                return;
+            }
+            
+            cases.forEach((c, index) => {
+                const caseDiv = document.createElement('div');
+                caseDiv.className = 'case-item';
+                caseDiv.innerHTML = `
+                    <div class="case-header">
+                        <span class="case-title">案例 ${index + 1}: ${c.error_type || '未知'}</span>
+                        <span class="similarity">相似度: ${((c.similarity || 0) * 100).toFixed(0)}%</span>
+                    </div>
+                    <div style="margin-top: 8px; color: #666; font-size: 13px;">
+                        <strong>原因：</strong>${c.root_cause || ''}<br>
+                        <strong>方案：</strong>${c.solution || ''}
+                    </div>
+                `;
+                casesContainer.appendChild(caseDiv);
+            });
         }
 
         function displayResult(result) {

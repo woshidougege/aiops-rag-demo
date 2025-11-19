@@ -20,6 +20,7 @@ class AIOpsAgent:
     def __init__(self):
         """初始化 Agent（使用 LangGraph）"""
         self.ssh_tool = SSHTool()
+        self.execution_log = []  # 存储执行日志
         
         # 初始化 LLM with Tool Calling
         self.llm = ChatOpenAI(
@@ -64,6 +65,7 @@ class AIOpsAgent:
         """创建工具列表"""
         
         ssh_tool_instance = self.ssh_tool
+        execution_log = self.execution_log  # 引用共享日志
         
         @tool
         def execute_ssh_command(command: str) -> str:
@@ -84,19 +86,125 @@ class AIOpsAgent:
                 命令的输出结果
             """
             try:
+                # 记录命令到日志
+                execution_log.append({"type": "command", "content": command})
+                
                 result = ssh_tool_instance.execute_command(command)
                 
                 if result['success']:
                     output = result['stdout'].strip()
+                    # 记录结果到日志
+                    execution_log.append({"type": "result", "content": output[:500], "success": True})
                     return f"✓ 命令执行成功:\n{output}" if output else "✓ 命令执行成功（无输出）"
                 else:
                     error = result['stderr'].strip()
+                    # 记录错误到日志
+                    execution_log.append({"type": "result", "content": error[:500], "success": False, "exit_code": result['exit_code']})
                     return f"✗ 命令执行失败 (退出码: {result['exit_code']}):\n{error}"
                     
             except Exception as e:
+                execution_log.append({"type": "error", "content": str(e)})
                 return f"✗ 执行异常: {str(e)}"
         
         return [execute_ssh_command]
+    
+    async def diagnose_with_tools_stream(self, error_log: str):
+        """
+        流式执行诊断（实时返回每一步）- 简化版，直接监控 SSH 工具
+        """
+        try:
+            print("[Agent Stream] 开始流式诊断")
+            # 清空之前的日志
+            self.execution_log.clear()
+            
+            yield {"type": "thinking", "content": "🔍 Agent 正在分析错误日志..."}
+            
+            # 由于 LangGraph 的 astream 事件格式复杂，这里简化：
+            # 直接执行并收集步骤日志
+            import asyncio
+            
+            # 在后台执行 Agent
+            result_container = []
+            last_log_index = 0  # 记录已发送的日志位置
+            
+            async def run_agent():
+                try:
+                    # invoke 是同步的，使用 to_thread 避免阻塞事件循环
+                    result = await asyncio.to_thread(
+                        self.agent_executor.invoke,
+                        {
+                            "messages": [
+                                ("system", self.system_message),
+                                ("user", f"分析故障：\n{error_log}\n\n请使用工具诊断")
+                            ]
+                        }
+                    )
+                    result_container.append(result)
+                except Exception as e:
+                    print(f"[Agent] 执行失败: {e}")
+                    result_container.append({"error": str(e)})
+            
+            # 启动 Agent 任务
+            agent_task = asyncio.create_task(run_agent())
+            
+            # 实时轮询执行日志（真正的流式输出）
+            while not agent_task.done():
+                # 检查是否有新的执行日志
+                if len(self.execution_log) > last_log_index:
+                    for i in range(last_log_index, len(self.execution_log)):
+                        log_entry = self.execution_log[i]
+                        
+                        if log_entry["type"] == "command":
+                            # 发送命令
+                            yield {
+                                "type": "tool_call",
+                                "args": {"command": log_entry["content"]}
+                            }
+                        elif log_entry["type"] == "result":
+                            # 发送结果
+                            yield {
+                                "type": "tool_result",
+                                "content": log_entry["content"],
+                                "success": log_entry.get("success", True)
+                            }
+                        elif log_entry["type"] == "error":
+                            yield {
+                                "type": "thinking",
+                                "content": f"❌ 错误: {log_entry['content']}"
+                            }
+                    
+                    last_log_index = len(self.execution_log)
+                
+                await asyncio.sleep(0.2)  # 每200ms检查一次
+            
+            # 等待完成
+            await agent_task
+            
+            if result_container:
+                result = result_container[0]
+                if "error" in result:
+                    yield {"type": "error", "message": result["error"]}
+                else:
+                    # 提取最终消息
+                    messages = result.get("messages", [])
+                    final_content = messages[-1].content if messages else "诊断完成"
+                    
+                    yield {"type": "thinking", "content": "✓ 诊断完成"}
+                    yield {
+                        "type": "final_result",
+                        "data": {
+                            "diagnosis": final_content[:500],
+                            "root_cause": "参见 Agent 执行日志",
+                            "solution": "参见诊断内容",
+                            "confidence": 0.85,
+                            "retrieved_cases": []
+                        }
+                    }
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            yield {"type": "error", "message": str(e)}
     
     def diagnose_with_tools(self, error_log: str) -> Dict:
         """

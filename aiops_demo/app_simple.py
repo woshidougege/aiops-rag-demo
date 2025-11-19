@@ -394,9 +394,103 @@ async def health():
     return {"status": "healthy", "knowledge_base": len(rag_engine.knowledge_base)}
 
 
+@app.post("/api/diagnose/stream")
+async def diagnose_stream(request: DiagnosisRequest):
+    """流式诊断API - 实时返回思考过程和结果"""
+    from fastapi.responses import StreamingResponse
+    import asyncio
+    
+    async def event_generator():
+        try:
+            # 发送开始信号
+            print(f"[SSE] 发送开始信号: {'agent' if request.use_tools else 'chat'} 模式")
+            yield f"data: {json.dumps({'type': 'start', 'mode': 'agent' if request.use_tools else 'chat'})}\n\n"
+            await asyncio.sleep(0)
+            
+            if request.use_tools and aiops_agent:
+                # ========== Agent 模式：实时流式输出 ==========
+                yield f"data: {json.dumps({'type': 'thinking', 'content': '🤖 Agent 模式启动'})}\n\n"
+                
+                # 真正的流式 Agent 执行（每一步都实时发送）
+                print(f"[SSE] 开始 Agent 流式执行")
+                async for event in aiops_agent.diagnose_with_tools_stream(request.error_log):
+                    print(f"[SSE] Agent 事件: {event.get('type')}")
+                    yield f"data: {json.dumps(event)}\n\n"
+                    await asyncio.sleep(0)
+                
+            else:
+                # ========== Chat 模式：LLM 流式生成 ==========
+                yield f"data: {json.dumps({'type': 'thinking', 'content': '💬 Chat 模式：检索知识库...'})}\n\n"
+                await asyncio.sleep(0)
+                
+                # 1. 检索相似案例
+                cases = rag_engine.search(request.error_log, top_k=3)
+                yield f"data: {json.dumps({'type': 'thinking', 'content': f'✓ 找到 {len(cases)} 个相似案例'})}\n\n"
+                await asyncio.sleep(0)
+                
+                # 2. 格式化历史案例
+                if cases:
+                    history_text = ""
+                    for i, case in enumerate(cases, 1):
+                        history_text += f"\n案例{i}:\n"
+                        history_text += f"  错误类型: {case['error_type']}\n"
+                        history_text += f"  根本原因: {case['root_cause']}\n"
+                        history_text += f"  解决方案: {case['solution']}\n"
+                else:
+                    history_text = "无相似历史案例"
+                
+                yield f"data: {json.dumps({'type': 'thinking', 'content': '🤖 LLM 正在生成诊断...'})}\n\n"
+                await asyncio.sleep(0)
+                
+                # 3. LLM 流式生成诊断（内部累积，不显示流式文本，避免显示 think 和 JSON）
+                full_response = ""
+                for chunk in rag_engine.diagnosis_chain.stream({
+                    "error_log": request.error_log,
+                    "retrieved_cases": history_text
+                }):
+                    if chunk:
+                        full_response += chunk
+                
+                yield f"data: {json.dumps({'type': 'thinking', 'content': '✓ 生成完成，解析结果...'})}\n\n"
+                yield f"data: {json.dumps({'type': 'result_start'})}\n\n"
+                await asyncio.sleep(0)
+                
+                # 4. 解析最终 JSON 结果
+                import re
+                json_match = re.search(r'\{.*\}', full_response, re.DOTALL)
+                if json_match:
+                    result = json.loads(json_match.group())
+                else:
+                    result = {"diagnosis": full_response, "root_cause": "见诊断", "solution": "见诊断", "confidence": 0.7}
+                
+                result['retrieved_cases'] = cases
+                
+                # 5. 发送结构化结果
+                yield f"data: {json.dumps({'type': 'final_result', 'data': result})}\n\n"
+                await asyncio.sleep(0)
+            
+            # 发送结束信号
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+
 @app.post("/api/diagnose", response_model=DiagnosisResponse)
 async def diagnose(request: DiagnosisRequest):
-    """诊断API - 支持 Chat 和 Agent 两种模式"""
+    """诊断API - 支持 Chat 和 Agent 两种模式（非流式，兼容旧版）"""
     try:
         # Agent 模式：使用 Tool Calling 自动执行命令
         if request.use_tools and aiops_agent:
