@@ -180,22 +180,53 @@ class AIOpsAgent:
             # 等待完成
             await agent_task
             
+            # 发送剩余的日志
+            if len(self.execution_log) > last_log_index:
+                for i in range(last_log_index, len(self.execution_log)):
+                    log_entry = self.execution_log[i]
+                    if log_entry["type"] == "command":
+                        yield {"type": "tool_call", "args": {"command": log_entry["content"]}}
+                    elif log_entry["type"] == "result":
+                        yield {"type": "tool_result", "content": log_entry["content"], "success": log_entry.get("success", True)}
+            
             if result_container:
                 result = result_container[0]
                 if "error" in result:
                     yield {"type": "error", "message": result["error"]}
                 else:
-                    # 提取最终消息
+                    # 提取最终消息并解析
                     messages = result.get("messages", [])
                     final_content = messages[-1].content if messages else "诊断完成"
+                    
+                    # 尝试从 LLM 输出中提取结构化信息
+                    import re
+                    import json
+                    
+                    diagnosis = "基于命令执行结果的诊断"
+                    root_cause = "参见执行日志中的命令输出"
+                    solution = "参见 LLM 分析"
+                    
+                    # 尝试解析 JSON
+                    json_match = re.search(r'\{[^{}]*"diagnosis"[^{}]*\}', final_content, re.DOTALL)
+                    if json_match:
+                        try:
+                            parsed = json.loads(json_match.group())
+                            diagnosis = parsed.get("diagnosis", diagnosis)
+                            root_cause = parsed.get("root_cause", root_cause)
+                            solution = parsed.get("solution", solution)
+                        except:
+                            pass
+                    else:
+                        # 没有 JSON，使用原文
+                        diagnosis = final_content[:300]
                     
                     yield {"type": "thinking", "content": "✓ 诊断完成"}
                     yield {
                         "type": "final_result",
                         "data": {
-                            "diagnosis": final_content[:500],
-                            "root_cause": "参见 Agent 执行日志",
-                            "solution": "参见诊断内容",
+                            "diagnosis": diagnosis,
+                            "root_cause": root_cause,
+                            "solution": solution,
                             "confidence": 0.85,
                             "retrieved_cases": []
                         }

@@ -782,7 +782,13 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
                 
             } else if (data.type === 'final_result') {
                 // 显示最终结构化结果
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('resultSection').classList.add('show');
+                
                 const result = data.data;
+                
+                // 显示诊断结果
+                document.getElementById('diagnosis').textContent = result.diagnosis || '';
                 document.getElementById('rootCause').textContent = result.root_cause || '';
                 
                 const solutionDiv = document.getElementById('solution');
