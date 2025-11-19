@@ -247,6 +247,144 @@
             background: #e0e0e0;
             transform: translateY(-1px);
         }
+
+        /* Cursor 风格的输入框和模式选择器 */
+        .textarea-wrapper {
+            position: relative;
+            padding-bottom: 40px; /* 为底部选择器留出空间 */
+        }
+
+        .input-section textarea {
+            padding-bottom: 50px; /* 防止文字被选择器遮挡 */
+        }
+
+        .mode-selector-wrapper {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            z-index: 100;
+        }
+
+        .mode-selector-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #333;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .mode-selector-btn:hover {
+            background: #f8f8f8;
+            border-color: #667eea;
+        }
+
+        .mode-text {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .model-text {
+            color: #666;
+            font-size: 11px;
+        }
+
+        .mode-dropdown {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 8px;
+            min-width: 280px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 1000;
+        }
+
+        .mode-dropdown.show {
+            display: block;
+            animation: slideUp 0.2s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-section {
+            padding: 8px;
+        }
+
+        .dropdown-label {
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dropdown-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dropdown-option:hover {
+            background: #f5f5f5;
+        }
+
+        .dropdown-option.active {
+            background: #f0f0ff;
+        }
+
+        .option-content {
+            flex: 1;
+        }
+
+        .option-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .option-desc {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .check-icon {
+            flex-shrink: 0;
+        }
+
+        .check-icon.hidden {
+            opacity: 0;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e8e8e8;
+            margin: 4px 0;
+        }
     </style>
 </head>
 <body>
@@ -259,12 +397,75 @@
         <div class="main-card">
             <div class="input-section">
                 <label for="errorLog">📝 输入错误日志或故障描述：</label>
-                <textarea id="errorLog" placeholder="请输入错误日志、异常堆栈或故障描述...
+                <div class="textarea-wrapper">
+                    <textarea id="errorLog" placeholder="请输入错误日志、异常堆栈或故障描述...
 
 示例：
 java.lang.OutOfMemoryError: Java heap space
     at java.util.Arrays.copyOf(Arrays.java:3332)
     at java.util.ArrayList.grow(ArrayList.java:275)"></textarea>
+                    
+                    <!-- Cursor 风格的模式选择器（左下角） -->
+                    <div class="mode-selector-wrapper">
+                        <button class="mode-selector-btn" onclick="toggleModeMenu()" id="modeSelectorBtn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span class="mode-text">Chat</span>
+                            <span class="model-text">Qwen-32B</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        
+                        <!-- 下拉菜单 -->
+                        <div class="mode-dropdown" id="modeDropdown">
+                            <div class="dropdown-section">
+                                <div class="dropdown-label">诊断模式</div>
+                                <div class="dropdown-option" onclick="selectMode('chat')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    <div class="option-content">
+                                        <div class="option-title">Chat</div>
+                                        <div class="option-desc">基于知识库检索和 LLM 推理</div>
+                                    </div>
+                                    <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="dropdown-option" onclick="selectMode('agent')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2v6m0 12v2m9-11h-2M5 11H3m15.364-6.364l-1.414 1.414M6.05 17.95l-1.414 1.414m12.728 0l-1.414-1.414M6.05 6.05L4.636 4.636"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <div class="option-content">
+                                        <div class="option-title">Agent</div>
+                                        <div class="option-desc">自动执行 SSH 诊断命令</div>
+                                    </div>
+                                    <svg class="check-icon hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            <div class="dropdown-divider"></div>
+                            
+                            <div class="dropdown-section">
+                                <div class="dropdown-label">LLM 模型</div>
+                                <div class="dropdown-option active">
+                                    <div class="option-content">
+                                        <div class="option-title">Qwen-32B</div>
+                                        <div class="option-desc">192.168.20.67:3000</div>
+                                    </div>
+                                    <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="example-buttons">
                     <button class="example-btn" onclick="loadExample(1)">📌 示例1: OOM错误</button>
@@ -351,6 +552,67 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
             document.getElementById('resultSection').classList.remove('show');
         }
 
+        // 当前选中的模式
+        let currentMode = 'chat';
+
+        // 切换下拉菜单显示/隐藏
+        function toggleModeMenu() {
+            const dropdown = document.getElementById('modeDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // 选择模式
+        function selectMode(mode) {
+            currentMode = mode;
+            
+            // 更新按钮显示
+            const modeText = document.querySelector('.mode-text');
+            const modeIcon = document.querySelector('.mode-selector-btn svg:first-child');
+            
+            if (mode === 'chat') {
+                modeText.textContent = 'Chat';
+                modeIcon.innerHTML = '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>';
+            } else {
+                modeText.textContent = 'Agent';
+                modeIcon.innerHTML = '<path d="M12 2v6m0 12v2m9-11h-2M5 11H3m15.364-6.364l-1.414 1.414M6.05 17.95l-1.414 1.414m12.728 0l-1.414-1.414M6.05 6.05L4.636 4.636"></path><circle cx="12" cy="12" r="3"></circle>';
+            }
+            
+            // 更新选项卡的选中状态
+            const options = document.querySelectorAll('.dropdown-option');
+            options.forEach((opt, idx) => {
+                if (idx === 0) { // Chat
+                    if (mode === 'chat') {
+                        opt.classList.add('active');
+                        opt.querySelector('.check-icon').classList.remove('hidden');
+                    } else {
+                        opt.classList.remove('active');
+                        opt.querySelector('.check-icon').classList.add('hidden');
+                    }
+                } else if (idx === 1) { // Agent
+                    if (mode === 'agent') {
+                        opt.classList.add('active');
+                        opt.querySelector('.check-icon').classList.remove('hidden');
+                    } else {
+                        opt.classList.remove('active');
+                        opt.querySelector('.check-icon').classList.add('hidden');
+                    }
+                }
+            });
+            
+            // 关闭下拉菜单
+            toggleModeMenu();
+        }
+
+        // 点击外部关闭菜单
+        document.addEventListener('click', function(event) {
+            const wrapper = document.querySelector('.mode-selector-wrapper');
+            const dropdown = document.getElementById('modeDropdown');
+            
+            if (wrapper && !wrapper.contains(event.target) && dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+            }
+        });
+
         async function diagnose() {
             const errorLog = document.getElementById('errorLog').value.trim();
             
@@ -365,6 +627,9 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
             document.getElementById('diagnoseBtn').disabled = true;
 
             try {
+                // 根据模式选择使用的 API
+                const useTools = (currentMode === 'agent');
+                
                 const response = await fetch('/api/diagnose', {
                     method: 'POST',
                     headers: {
@@ -372,7 +637,7 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
                     },
                     body: JSON.stringify({
                         error_log: errorLog,
-                        top_k: 3
+                        use_tools: useTools
                     })
                 });
 

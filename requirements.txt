@@ -22,6 +22,8 @@ pypdf>=3.17.0
 python-docx>=1.1.0
 beautifulsoup4>=4.12.0
 lxml>=5.3.0
+unstructured>=0.10.0  # 支持更多文档格式
+markdown>=3.5.0  # Markdown 处理
 
 # AI/ML 依赖（Python 3.11 稳定版本）
 tiktoken>=0.8.0

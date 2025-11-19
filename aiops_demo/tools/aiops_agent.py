@@ -2,11 +2,15 @@
 AIOps 智能诊断 Agent
 使用 LangChain Tool Calling 自动执行诊断操作
 """
-from langchain.agents import Tool, AgentExecutor, create_openai_tools_agent
+from langchain_core.tools import tool
+from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from typing import Dict, List
 import re
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from tools.ssh_tool import SSHTool
 from config import LLM_CONFIG

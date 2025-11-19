@@ -26,8 +26,8 @@ from config import LLM_CONFIG, EMBEDDING_CONFIG, MILVUS_CONFIG, RERANKER_CONFIG
 # ===================================================================
 app = FastAPI(
     title="AIOps RAG Demo",
-    description="智能运维故障诊断系统",
-    version="1.0.0"
+    description="智能运维故障诊断系统（支持 Tool Calling）",
+    version="2.0.0"
 )
 
 print("🚀 启动 AIOps RAG Demo...")
@@ -348,6 +348,15 @@ class LangChainRAGEngine:
 # 初始化RAG引擎
 rag_engine = LangChainRAGEngine()
 
+# 初始化 AIOps Agent（Tool Calling）
+try:
+    from tools.aiops_agent import AIOpsAgent
+    aiops_agent = AIOpsAgent()
+    print("✓ AIOps Agent 已初始化（Tool Calling 可用）\n")
+except Exception as e:
+    aiops_agent = None
+    print(f"⚠ AIOps Agent 初始化失败: {e}\n")
+
 
 # ===================================================================
 # 数据模型
@@ -355,6 +364,7 @@ rag_engine = LangChainRAGEngine()
 class DiagnosisRequest(BaseModel):
     error_log: str
     top_k: Optional[int] = 3
+    use_tools: Optional[bool] = False  # 是否使用 Agent 模式（Tool Calling）
 
 
 class DiagnosisResponse(BaseModel):
@@ -386,9 +396,18 @@ async def health():
 
 @app.post("/api/diagnose", response_model=DiagnosisResponse)
 async def diagnose(request: DiagnosisRequest):
-    """诊断API"""
+    """诊断API - 支持 Chat 和 Agent 两种模式"""
     try:
-        result = rag_engine.diagnose(request.error_log)
+        # Agent 模式：使用 Tool Calling 自动执行命令
+        if request.use_tools and aiops_agent:
+            print(f"🔧 使用 Agent 模式（Tool Calling）")
+            result = aiops_agent.diagnose_with_tools(request.error_log)
+        # Chat 模式：传统 RAG（检索 + LLM）
+        else:
+            if request.use_tools and not aiops_agent:
+                print("⚠ Agent 未启用，降级到 Chat 模式")
+            print(f"💬 使用 Chat 模式（RAG）")
+            result = rag_engine.diagnose(request.error_log)
         
         print(f"📝 [DEBUG] RAG引擎返回的结果: {result}")
         print(f"📝 [DEBUG] retrieved_cases 数量: {len(result.get('retrieved_cases', []))}")
