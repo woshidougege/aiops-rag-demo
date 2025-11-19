@@ -30,5 +30,11 @@ numpy>=1.26.0,<2.0.0
 # 我们使用 API 调用向量模型，不需要本地模型
 faiss-cpu>=1.7.4
 
+# SSH 远程执行
+paramiko>=3.0.0
+
+# LangChain Agents（Tool Calling）
+langgraph>=0.0.20
+
 # 注意：使用 pymilvus 2.3.x 版本以避免 milvus-lite 依赖问题
 # 连接到远程 Milvus 服务器（192.168.1.65:19530）
