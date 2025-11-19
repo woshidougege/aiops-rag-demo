@@ -15,10 +15,10 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from langchain_community.vectorstores import Milvus
+from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 
-from config import LLM_CONFIG, EMBEDDING_CONFIG, MILVUS_CONFIG
+from config import LLM_CONFIG, EMBEDDING_CONFIG, MILVUS_CONFIG, RERANKER_CONFIG
 
 
 # ===================================================================
@@ -34,7 +34,66 @@ print("🚀 启动 AIOps RAG Demo...")
 
 
 # ===================================================================
-# RAG引擎（LangChain 版）
+# Reranker 精排器
+# ===================================================================
+class SiliconFlowReranker:
+    """SiliconFlow API 的 Reranker"""
+    
+    def __init__(self):
+        self.api_url = RERANKER_CONFIG['api_url']
+        self.api_key = RERANKER_CONFIG['api_key']
+        self.model = RERANKER_CONFIG['model']
+        self.top_n = RERANKER_CONFIG['top_n']
+    
+    def rerank(self, query: str, documents: List[Dict]) -> List[Dict]:
+        """对检索结果进行精排"""
+        if not documents:
+            return documents
+        
+        try:
+            import requests
+            # 准备文档文本
+            texts = [doc.get('content', '') or f"{doc.get('error_type', '')} {doc.get('root_cause', '')}" 
+                    for doc in documents]
+            
+            # 调用 Reranker API
+            response = requests.post(
+                self.api_url,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": self.model,
+                    "query": query,
+                    "documents": texts,
+                    "top_n": self.top_n
+                },
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                # 根据 Reranker 返回的索引重新排序
+                reranked = []
+                for item in result.get('results', [])[:self.top_n]:
+                    idx = item['index']
+                    doc = documents[idx].copy()
+                    doc['rerank_score'] = item['relevance_score']
+                    reranked.append(doc)
+                print(f"  ✓ Reranker 精排完成，返回 Top-{len(reranked)}")
+                return reranked
+            else:
+                print(f"  ⚠ Reranker 调用失败: {response.status_code}")
+                return documents[:self.top_n]
+        
+        except Exception as e:
+            print(f"  ⚠ Reranker 异常: {e}")
+            return documents[:self.top_n]
+
+
+# ===================================================================
+# RAG引擎（LangChain 完整版：LLM + Embedding + Reranker + Milvus）
 # ===================================================================
 class LangChainRAGEngine:
     """基于 LangChain 的 RAG 引擎"""
@@ -59,6 +118,14 @@ class LangChainRAGEngine:
             model=EMBEDDING_CONFIG['model']
         )
         print(f"✓ Embedding 已初始化: {EMBEDDING_CONFIG['model']}")
+        
+        # 初始化 Reranker（如果启用）
+        if RERANKER_CONFIG.get('enabled', False):
+            self.reranker = SiliconFlowReranker()
+            print(f"✓ Reranker 已初始化: {RERANKER_CONFIG['model']}")
+        else:
+            self.reranker = None
+            print("⚠ Reranker 未启用")
         
         # 加载知识库并初始化向量存储
         self.vectorstore = None
@@ -119,14 +186,40 @@ class LangChainRAGEngine:
                 }
                 documents.append(Document(page_content=content, metadata=metadata))
             
-            # 使用内存向量存储（如需持久化可改用 Milvus）
-            from langchain_community.vectorstores import FAISS
+            # 优先使用 Milvus，失败则降级到 FAISS
             try:
-                self.vectorstore = FAISS.from_documents(documents, self.embeddings)
-                print("✓ 向量存储已创建（使用 FAISS）")
+                from langchain_milvus import Milvus
+                from pymilvus import connections
+                
+                print(f"🔄 尝试连接 Milvus: {MILVUS_CONFIG['host']}:{MILVUS_CONFIG['port']}...")
+                
+                # 先建立连接
+                connections.connect(
+                    alias="default",
+                    host=MILVUS_CONFIG['host'],
+                    port=int(MILVUS_CONFIG['port']),
+                    timeout=10
+                )
+                print("  ✓ Milvus 连接成功")
+                
+                # 创建向量存储
+                self.vectorstore = Milvus.from_documents(
+                    documents,
+                    self.embeddings,
+                    collection_name=MILVUS_CONFIG['collection_name'],
+                    connection_args={"alias": "default"},
+                    drop_old=True  # 重新创建collection
+                )
+                print(f"✓ 向量存储已创建（使用 Milvus: {MILVUS_CONFIG['host']}:{MILVUS_CONFIG['port']}）")
             except Exception as e:
-                print(f"⚠ 向量存储创建失败: {e}")
-                self.vectorstore = None
+                print(f"⚠ Milvus 连接失败: {e}")
+                print("🔄 降级使用 FAISS...")
+                try:
+                    self.vectorstore = FAISS.from_documents(documents, self.embeddings)
+                    print("✓ 向量存储已创建（使用 FAISS 本地存储）")
+                except Exception as e2:
+                    print(f"⚠ FAISS 创建失败: {e2}")
+                    self.vectorstore = None
         else:
             print(f"⚠ 知识库文件不存在: {kb_path}")
     
@@ -155,7 +248,13 @@ class LangChainRAGEngine:
                     "content": doc.page_content
                 })
             
-            print(f"✓ 找到 {len(results)} 个相似案例")
+            print(f"✓ 向量检索找到 {len(results)} 个相似案例")
+            
+            # 使用 Reranker 精排（如果启用）
+            if self.reranker and RERANKER_CONFIG.get('enabled', False):
+                print("🔄 使用 Reranker 进行精排...")
+                results = self.reranker.rerank(query, results)
+            
             return results
             
         except Exception as e:
@@ -208,6 +307,8 @@ class LangChainRAGEngine:
                 "retrieved_cases": history_text
             })
             
+            print(f"📝 [DEBUG] LLM 原始响应:\n{response[:500]}...")  # 只打印前500字符
+            
             # 4. 解析 JSON 结果
             import re
             json_match = re.search(r'\{.*\}', response, re.DOTALL)
@@ -215,6 +316,9 @@ class LangChainRAGEngine:
                 result = json.loads(json_match.group())
             else:
                 result = json.loads(response)
+            
+            print(f"📝 [DEBUG] 解析后的结果: {result}")
+            print(f"📝 [DEBUG] confidence 字段: {result.get('confidence')} (类型: {type(result.get('confidence'))})")
             
             result['retrieved_cases'] = cases
             print("✓ 诊断完成")
@@ -285,23 +389,54 @@ async def diagnose(request: DiagnosisRequest):
     """诊断API"""
     try:
         result = rag_engine.diagnose(request.error_log)
-        return DiagnosisResponse(
+        
+        print(f"📝 [DEBUG] RAG引擎返回的结果: {result}")
+        print(f"📝 [DEBUG] retrieved_cases 数量: {len(result.get('retrieved_cases', []))}")
+        
+        # 安全地转换 confidence
+        raw_confidence = result.get('confidence', 0.5)
+        try:
+            confidence_value = float(raw_confidence)
+        except (ValueError, TypeError) as e:
+            print(f"⚠ [DEBUG] confidence 转换失败: {raw_confidence}, 错误: {e}")
+            confidence_value = 0.5
+        
+        print(f"📝 [DEBUG] confidence 最终值: {confidence_value}")
+        
+        # 安全地处理 retrieved_cases
+        safe_cases = []
+        for i, c in enumerate(result.get('retrieved_cases', [])):
+            print(f"📝 [DEBUG] 处理案例 {i}: {c}")
+            safe_cases.append({
+                "error_type": c.get('error_type', '未知'),
+                "similarity": float(c.get('similarity', 0)),
+                "root_cause": c.get('root_cause', ''),
+                "solution": c.get('solution', '')
+            })
+        
+        # 处理 solution 字段：可能是 list 或 str
+        raw_solution = result.get('solution', '')
+        if isinstance(raw_solution, list):
+            solution_str = '\n'.join(str(s) for s in raw_solution)
+        else:
+            solution_str = str(raw_solution)
+        
+        response = DiagnosisResponse(
             success=True,
             diagnosis=result.get('diagnosis', ''),
             root_cause=result.get('root_cause', ''),
-            solution=result.get('solution', ''),
-            confidence=float(result.get('confidence', 0.5)),
-            retrieved_cases=[
-                {
-                    "error_type": c['error_type'],
-                    "similarity": c.get('similarity', 0),
-                    "root_cause": c['root_cause'],
-                    "solution": c['solution']
-                }
-                for c in result.get('retrieved_cases', [])
-            ]
+            solution=solution_str,
+            confidence=confidence_value,
+            retrieved_cases=safe_cases
         )
+        
+        print("✅ [DEBUG] DiagnosisResponse 构造成功")
+        return response
+        
     except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"❌ [DEBUG] API 异常:\n{error_detail}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

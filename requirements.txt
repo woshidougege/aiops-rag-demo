@@ -1,26 +1,34 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pymilvus==2.3.4
-requests==2.31.0
-pydantic==2.5.0
+# Web 框架
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
 
-# LangChain 核心库
-langchain==0.1.0
-langchain-community==0.0.10
-langchain-core==0.1.10
+# 基础依赖
+requests>=2.31.0
+pydantic>=2.7.0
 
-# LangChain 集成
-langchain-milvus==0.0.2
-langchain-openai==0.0.2
+# Milvus 向量数据库（使用 2.3.x 版本，不依赖 milvus-lite）
+pymilvus>=2.3.0,<2.4.0
+
+# LangChain 核心（让 pip 自动解析版本）
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-openai>=0.2.0
+
+# LangChain Milvus 集成（使用较旧但稳定的版本）
+langchain-milvus>=0.1.0,<0.1.6
 
 # 文档处理
-pypdf==3.17.4
-python-docx==1.1.0
-beautifulsoup4==4.12.2
-lxml==4.9.3
+pypdf>=3.17.0
+python-docx>=1.1.0
+beautifulsoup4>=4.12.0
+lxml>=5.3.0
 
-# 其他依赖
-tiktoken==0.5.2
-numpy==1.24.3
-sentence-transformers==2.2.2
-faiss-cpu==1.7.4  # 向量存储（CPU版本）
+# AI/ML 依赖（Python 3.11 稳定版本）
+tiktoken>=0.8.0
+numpy>=1.26.0,<2.0.0
+# 注意：移除 sentence-transformers，避免 PyTorch DLL 问题
+# 我们使用 API 调用向量模型，不需要本地模型
+faiss-cpu>=1.7.4
+
+# 注意：使用 pymilvus 2.3.x 版本以避免 milvus-lite 依赖问题
+# 连接到远程 Milvus 服务器（192.168.1.65:19530）
