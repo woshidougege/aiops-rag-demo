@@ -2,33 +2,42 @@
 
 基于 **RAG（检索增强生成）** 的智能运维故障诊断系统，使用大模型自动分析日志并生成解决方案。
 
-![Python](https://img.shields.io/badge/Python-3.9+-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green) ![License](https://img.shields.io/badge/License-MIT-yellow)
+![Python](https://img.shields.io/badge/Python-3.9+-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green) ![LangChain](https://img.shields.io/badge/LangChain-0.1.0-orange) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-**🌟 特点：轻量级设计，纯API调用，无需下载模型，5分钟即可部署！**
+**🌟 特点：基于 LangChain 框架，标准化 RAG 流程，轻量级设计，5分钟即可部署！**
+
+**🎉 最新更新：已迁移到 LangChain 框架，代码更规范、更易扩展！** [查看迁移说明](docs/LangChain_使用说明.md)
 
 ---
 
 ## ✨ 核心特性
 
-- 🔍 **智能检索**：基于BGE-M3向量模型检索相似历史案例
-- 🤖 **AI诊断**：使用Qwen-32B大模型生成诊断报告和修复方案
-- 💾 **向量存储**：Milvus向量数据库存储知识库
+- 🔗 **LangChain 框架**：基于 LangChain 构建，标准化 RAG 流程，易于扩展
+- 🔍 **智能检索**：使用 FAISS/Milvus 向量存储，BGE-M3 向量模型
+- 🤖 **AI诊断**：使用 Qwen-32B 大模型生成诊断报告和修复方案
+- 💾 **向量存储**：支持 FAISS（内存）和 Milvus（持久化）
 - 🌐 **Web界面**：简洁美观的可视化界面
-- ⚡ **高性能**：异步API，快速响应
+- ⚡ **高性能**：异步API，快速响应，降级保护
 - 🚀 **轻量级**：纯API调用，无需GPU，无需下载大模型
 
 ---
 
-## 🎯 技术架构
+## 🎯 技术架构（基于 LangChain）
 
 ```
 用户输入错误日志
       ↓
-【BGE-M3向量化】→ 转为1024维向量
+【LangChain Document】→ 文档标准化
       ↓
-【余弦相似度检索】→ 找到Top-3相似案例
+【OpenAI Embeddings】→ 调用 BGE-M3 转为1024维向量
       ↓
-【Qwen-32B大模型】→ 生成诊断 + 根因 + 修复方案
+【FAISS VectorStore】→ 相似度搜索 Top-3 案例
+      ↓
+【ChatPromptTemplate】→ 构建结构化提示词
+      ↓
+【ChatOpenAI (Qwen-32B)】→ 生成诊断 + 根因 + 修复方案
+      ↓
+【StrOutputParser】→ 解析输出
       ↓
 返回JSON结果
 ```
@@ -39,10 +48,11 @@
 
 | 组件 | 技术 | 说明 |
 |------|------|------|
+| **AI框架** | LangChain | 标准化 RAG 流程，易于扩展 |
 | **后端框架** | FastAPI | 高性能异步框架 |
 | **大语言模型** | Qwen-32B | OpenAI API兼容 |
 | **向量模型** | BAAI/bge-m3 | 中文向量化SOTA |
-| **向量数据库** | Milvus | 分布式向量检索 |
+| **向量数据库** | FAISS / Milvus | 内存/持久化向量检索 |
 | **前端** | HTML + JavaScript | 简洁的Web界面 |
 
 ---
@@ -262,16 +272,19 @@ python test_services.py
 ## 📚 相关文档
 
 - [完整需求文档](docs/需求文档.md) - 详细的功能需求和技术架构
+- [LangChain 使用说明](docs/LangChain_使用说明.md) - 框架迁移说明和扩展示例
 - [API文档](http://localhost:8888/docs) - 自动生成的API接口文档
 
 ---
 
 ## 📝 TODO
 
-- [ ] 添加Reranker二次精排
-- [ ] 支持多轮对话
+- [x] ~~迁移到 LangChain 框架~~（已完成）
+- [ ] 添加混合检索（BM25 + 向量）
+- [ ] 集成 Reranker 二次精排
+- [ ] 支持流式输出（Streaming）
+- [ ] 添加 LangChain Agent 工具调用
 - [ ] 集成实际监控系统（Prometheus/ELK）
-- [ ] 添加告警自动诊断
 - [ ] 支持更多故障类型
 - [ ] 增加用户认证
 
@@ -320,4 +333,4 @@ python test_services.py
 ---
 
 **最后更新**: 2024-11-19  
-**版本**: 1.0.0
+**版本**: 2.0.0 (LangChain)

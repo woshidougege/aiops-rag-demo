@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIOps RAG Demo - 智能运维故障诊断</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-section label {
+            display: block;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .input-section textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        .input-section textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .result-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .result-card .content {
+            color: #333;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .confidence {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .confidence.high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .confidence.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .confidence.low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .cases-section {
+            margin-top: 30px;
+        }
+
+        .case-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .case-title {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .similarity {
+            background: #667eea;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+        }
+
+        .example-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .example-btn {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .example-btn:hover {
+            background: #e0e0e0;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 AIOps RAG Demo</h1>
+            <p>基于 RAG + 本地大模型的智能运维故障诊断系统</p>
+        </header>
+
+        <div class="main-card">
+            <div class="input-section">
+                <label for="errorLog">📝 输入错误日志或故障描述：</label>
+                <textarea id="errorLog" placeholder="请输入错误日志、异常堆栈或故障描述...
+
+示例：
+java.lang.OutOfMemoryError: Java heap space
+    at java.util.Arrays.copyOf(Arrays.java:3332)
+    at java.util.ArrayList.grow(ArrayList.java:275)"></textarea>
+                
+                <div class="example-buttons">
+                    <button class="example-btn" onclick="loadExample(1)">📌 示例1: OOM错误</button>
+                    <button class="example-btn" onclick="loadExample(2)">📌 示例2: 连接超时</button>
+                    <button class="example-btn" onclick="loadExample(3)">📌 示例3: 数据库连接池</button>
+                    <button class="example-btn" onclick="loadExample(4)">📌 示例4: CPU高负载</button>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="diagnose()" id="diagnoseBtn">
+                    🔍 开始诊断
+                </button>
+                <button class="btn-secondary" onclick="clearAll()">
+                    🗑️ 清空
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>AI 正在分析中，请稍候...</p>
+            </div>
+
+            <div class="result-section" id="resultSection">
+                <div class="result-card">
+                    <h3>🎯 故障诊断</h3>
+                    <div class="content" id="diagnosis"></div>
+                </div>
+
+                <div class="result-card">
+                    <h3>🔬 根本原因</h3>
+                    <div class="content" id="rootCause"></div>
+                </div>
+
+                <div class="result-card">
+                    <h3>💡 解决方案</h3>
+                    <div class="content" id="solution"></div>
+                </div>
+
+                <div class="result-card">
+                    <h3>📊 置信度</h3>
+                    <div class="content">
+                        <span class="confidence" id="confidence"></span>
+                    </div>
+                </div>
+
+                <div class="cases-section">
+                    <h3 style="margin-bottom: 15px; color: #667eea;">📚 相似历史案例</h3>
+                    <div id="retrievedCases"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const examples = {
+            1: `java.lang.OutOfMemoryError: Java heap space
+    at java.util.Arrays.copyOf(Arrays.java:3332)
+    at java.util.ArrayList.grow(ArrayList.java:275)
+    at java.util.ArrayList.ensureCapacityInternal(ArrayList.java:247)`,
+            
+            2: `java.net.SocketTimeoutException: connect timed out
+    at java.net.PlainSocketImpl.socketConnect(Native Method)
+    at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350)
+服务器: 192.168.1.100:8080 无法连接`,
+            
+            3: `Cannot get connection, pool exhausted
+org.apache.commons.dbcp2.PoolExhaustedException: Timeout waiting for idle object
+    at org.apache.commons.pool2.impl.GenericObjectPool.borrowObject
+数据库连接池已满，当前活跃连接: 50/50`,
+            
+            4: `服务器CPU使用率持续超过90%，top命令显示：
+PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
+1234 root      20   0 8192456 4.2g  12m S  95.3  5.6 100:23.45 java
+应用响应缓慢，请求超时`
+        };
+
+        function loadExample(num) {
+            document.getElementById('errorLog').value = examples[num];
+        }
+
+        function clearAll() {
+            document.getElementById('errorLog').value = '';
+            document.getElementById('resultSection').classList.remove('show');
+        }
+
+        async function diagnose() {
+            const errorLog = document.getElementById('errorLog').value.trim();
+            
+            if (!errorLog) {
+                alert('请输入错误日志！');
+                return;
+            }
+
+            // 显示加载
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('resultSection').classList.remove('show');
+            document.getElementById('diagnoseBtn').disabled = true;
+
+            try {
+                const response = await fetch('/api/diagnose', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        error_log: errorLog,
+                        top_k: 3
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('诊断请求失败');
+                }
+
+                const result = await response.json();
+                displayResult(result);
+
+            } catch (error) {
+                alert('诊断失败: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('diagnoseBtn').disabled = false;
+            }
+        }
+
+        function displayResult(result) {
+            // 显示诊断结果
+            document.getElementById('diagnosis').textContent = result.diagnosis;
+            document.getElementById('rootCause').textContent = result.root_cause;
+            document.getElementById('solution').textContent = result.solution;
+
+            // 置信度
+            const confidence = result.confidence;
+            const confidenceEl = document.getElementById('confidence');
+            confidenceEl.textContent = `${(confidence * 100).toFixed(1)}%`;
+            
+            if (confidence >= 0.8) {
+                confidenceEl.className = 'confidence high';
+            } else if (confidence >= 0.5) {
+                confidenceEl.className = 'confidence medium';
+            } else {
+                confidenceEl.className = 'confidence low';
+            }
+
+            // 相似案例
+            const casesHtml = result.retrieved_cases.map(c => `
+                <div class="case-item">
+                    <div class="case-header">
+                        <span class="case-title">${c.error_type}</span>
+                        <span class="similarity">${(c.similarity * 100).toFixed(1)}% 相似</span>
+                    </div>
+                    <div style="color: #666; font-size: 0.9em; margin-top: 8px;">
+                        <div><strong>根因:</strong> ${c.root_cause}</div>
+                        <div style="margin-top: 5px;"><strong>方案:</strong> ${c.solution}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('retrievedCases').innerHTML = casesHtml || '<p style="color: #999;">无相似案例</p>';
+
+            // 显示结果区域
+            document.getElementById('resultSection').classList.add('show');
+        }
+    </script>
+</body>
+</html>

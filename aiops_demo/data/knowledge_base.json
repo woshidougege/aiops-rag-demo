@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "error_type": "OOM Error",
+    "log_content": "java.lang.OutOfMemoryError: Java heap space at java.util.Arrays.copyOf",
+    "root_cause": "JVM堆内存不足，无法分配新的对象空间",
+    "solution": "1. 增加JVM堆内存：-Xmx参数（如 -Xmx4g）\n2. 使用jmap -dump导出堆快照分析内存泄漏\n3. 检查代码中大对象创建和集合使用\n4. 使用jstat监控GC情况\n5. 考虑使用G1GC或ZGC垃圾收集器",
+    "keywords": ["OutOfMemoryError", "heap space", "内存", "JVM", "OOM"]
+  },
+  {
+    "id": 2,
+    "error_type": "Connection Timeout",
+    "log_content": "java.net.SocketTimeoutException: connect timed out at java.net.PlainSocketImpl.socketConnect",
+    "root_cause": "网络连接超时，可能是目标服务不可达、网络故障或防火墙阻断",
+    "solution": "1. 检查网络连通性：ping目标IP\n2. 检查端口是否开放：telnet IP port\n3. 查看目标服务状态：systemctl status service\n4. 检查防火墙规则：iptables -L\n5. 增加连接超时时间（如from 3s to 10s）\n6. 检查网络延迟：mtr -报告",
+    "keywords": ["SocketTimeoutException", "timeout", "连接超时", "网络", "connect"]
+  },
+  {
+    "id": 3,
+    "error_type": "Database Connection Pool Exhausted",
+    "log_content": "Cannot get connection, pool exhausted. Timeout waiting for idle object",
+    "root_cause": "数据库连接池耗尽，所有连接被占用且未释放",
+    "solution": "1. 增加连接池大小：maxActive=50→100\n2. 检查慢SQL：SHOW FULL PROCESSLIST\n3. 调整连接超时：maxWait=10000\n4. 确保连接正确释放（try-finally）\n5. 使用连接池监控查看活跃连接\n6. 检查是否有死锁：SHOW ENGINE INNODB STATUS",
+    "keywords": ["connection pool", "exhausted", "数据库", "连接池", "timeout"]
+  },
+  {
+    "id": 4,
+    "error_type": "CPU High Load",
+    "log_content": "CPU使用率持续>90%，top显示java进程占用95.3% CPU",
+    "root_cause": "CPU密集型任务过多、死循环、频繁GC或线程数过多导致上下文切换",
+    "solution": "1. 使用top查看具体进程和线程：top -H -p PID\n2. Java应用使用jstack查看线程栈：jstack PID\n3. 查找死循环或热点方法：jprofile或arthas\n4. 检查GC频率：jstat -gcutil PID 1000\n5. 优化代码算法复杂度\n6. 限制线程数或使用线程池\n7. 考虑水平扩展增加机器",
+    "keywords": ["CPU", "高负载", "性能", "top", "负载"]
+  },
+  {
+    "id": 5,
+    "error_type": "Disk Space Full",
+    "log_content": "ERROR: No space left on device. df shows /dev/sda1 100% used",
+    "root_cause": "磁盘空间耗尽，通常是日志文件、临时文件或数据库增长过快",
+    "solution": "1. 查看磁盘使用：df -h\n2. 查找大文件：du -sh /* | sort -rh | head -10\n3. 清理日志文件：find /var/log -name '*.log' -mtime +7 -delete\n4. 清理Docker镜像：docker system prune -a\n5. 配置日志轮转：logrotate\n6. 扩容磁盘或挂载新磁盘\n7. 监控磁盘使用率设置告警",
+    "keywords": ["disk", "space", "磁盘", "空间不足", "存储"]
+  },
+  {
+    "id": 6,
+    "error_type": "Redis Connection Refused",
+    "log_content": "redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused",
+    "root_cause": "Redis服务未启动或监听地址配置错误",
+    "solution": "1. 检查Redis服务状态：systemctl status redis\n2. 启动Redis：systemctl start redis\n3. 检查Redis配置：cat /etc/redis/redis.conf\n4. 验证监听地址：bind 0.0.0.0或127.0.0.1\n5. 检查端口占用：netstat -tunlp | grep 6379\n6. 查看Redis日志：tail -f /var/log/redis/redis-server.log",
+    "keywords": ["Redis", "connection refused", "连接", "拒绝"]
+  },
+  {
+    "id": 7,
+    "error_type": "Kubernetes Pod CrashLoopBackOff",
+    "log_content": "Pod status: CrashLoopBackOff. Container keeps restarting",
+    "root_cause": "Pod启动后立即崩溃，通常是应用错误、配置问题或资源不足",
+    "solution": "1. 查看Pod日志：kubectl logs pod-name --previous\n2. 查看Pod事件：kubectl describe pod pod-name\n3. 检查容器启动命令和参数\n4. 验证环境变量和ConfigMap\n5. 检查资源限制：requests/limits\n6. 查看存活探针配置：livenessProbe\n7. 进入容器调试：kubectl exec -it pod-name -- /bin/sh",
+    "keywords": ["Kubernetes", "CrashLoopBackOff", "Pod", "重启", "K8s"]
+  },
+  {
+    "id": 8,
+    "error_type": "Nginx 502 Bad Gateway",
+    "log_content": "Nginx返回502 Bad Gateway. upstream prematurely closed connection",
+    "root_cause": "后端服务不可用、超时或返回了非法响应",
+    "solution": "1. 检查后端服务状态：systemctl status backend\n2. 查看Nginx错误日志：tail -f /var/log/nginx/error.log\n3. 测试后端连接：curl http://backend:port\n4. 检查upstream配置：cat /etc/nginx/conf.d/upstream.conf\n5. 调整超时参数：proxy_connect_timeout 60s\n6. 检查后端服务日志\n7. 验证防火墙规则",
+    "keywords": ["Nginx", "502", "Bad Gateway", "upstream", "网关"]
+  },
+  {
+    "id": 9,
+    "error_type": "MySQL Deadlock",
+    "log_content": "Deadlock found when trying to get lock; try restarting transaction",
+    "root_cause": "多个事务相互等待对方释放锁，形成死锁",
+    "solution": "1. 查看死锁信息：SHOW ENGINE INNODB STATUS\n2. 分析死锁日志找出相关SQL\n3. 调整事务执行顺序，按相同顺序访问表\n4. 缩短事务持有锁的时间\n5. 使用乐观锁替代悲观锁\n6. 调整隔离级别：READ-COMMITTED\n7. 添加合适的索引减少锁范围",
+    "keywords": ["MySQL", "Deadlock", "死锁", "事务", "锁"]
+  },
+  {
+    "id": 10,
+    "error_type": "ElasticSearch Circuit Breaker",
+    "log_content": "CircuitBreakingException: [parent] Data too large, data size exceeds limit",
+    "root_cause": "ElasticSearch内存使用超过断路器限制，防止OOM",
+    "solution": "1. 增加断路器限制：indices.breaker.total.limit=95%\n2. 优化查询减少内存使用\n3. 使用scroll API分页查询大数据集\n4. 增加ES节点内存配置\n5. 清理不必要的缓存：clear cache API\n6. 检查聚合查询是否过大\n7. 使用fielddata断路器限制",
+    "keywords": ["ElasticSearch", "Circuit Breaker", "内存", "断路器", "ES"]
+  }
+]
