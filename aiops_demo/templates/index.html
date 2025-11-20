@@ -12,8 +12,9 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Consolas', sans-serif;
+            background: #1e1e1e;
+            color: #d4d4d4;
             min-height: 100vh;
             padding: 20px;
         }
@@ -24,27 +25,57 @@
         }
 
         header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #252526;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
 
         header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 18px;
+            font-weight: 600;
+            color: #cccccc;
         }
 
-        header p {
-            font-size: 1.1em;
-            opacity: 0.9;
+        .selectors {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .selector-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .selector-label {
+            font-size: 13px;
+            color: #858585;
+        }
+
+        select {
+            background: #3c3c3c;
+            border: 1px solid #454545;
+            color: #d4d4d4;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select:hover {
+            border-color: #007acc;
         }
 
         .main-card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            background: #252526;
+            border-radius: 8px;
+            padding: 20px;
         }
 
         .input-section {
@@ -53,27 +84,29 @@
 
         .input-section label {
             display: block;
-            font-size: 1.1em;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .input-section textarea {
-            width: 100%;
-            min-height: 150px;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
             font-size: 14px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            resize: vertical;
-            transition: border-color 0.3s;
+            font-weight: 500;
+            color: #cccccc;
+            margin-bottom: 10px;
         }
 
-        .input-section textarea:focus {
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            border-radius: 6px;
+            color: #d4d4d4;
+            font-size: 13px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #007acc;
         }
 
         .button-group {
@@ -83,49 +116,22 @@
         }
 
         button {
-            flex: 1;
-            padding: 15px 30px;
-            font-size: 1em;
-            font-weight: 600;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-secondary {
-            background: #f5f5f5;
-            color: #333;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
+            transition: all 0.2s;
         }
 
         button:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
         .loading {
-            text-align: center;
-            padding: 40px;
-            color: #667eea;
-            display: none;
-        }
-
-        .loading.show {
-            display: block;
+            display: none !important;
         }
 
         .spinner {
@@ -230,168 +236,265 @@
             display: flex;
             gap: 10px;
             margin-top: 10px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
         }
 
         .example-btn {
             padding: 8px 15px;
-            background: #f0f0f0;
-            border: 1px solid #ddd;
+            background: #3c3c3c;
+            border: 1px solid #454545;
             border-radius: 6px;
-            font-size: 0.85em;
+            font-size: 13px;
+            color: #d4d4d4;
             cursor: pointer;
             transition: all 0.2s;
         }
 
         .example-btn:hover {
-            background: #e0e0e0;
+            background: #505050;
             transform: translateY(-1px);
         }
 
-        /* Cursor 风格的输入框和模式选择器 */
+        /* 输入框容器 */
         .textarea-wrapper {
             position: relative;
-            padding-bottom: 40px; /* 为底部选择器留出空间 */
         }
 
-        .input-section textarea {
-            padding-bottom: 50px; /* 防止文字被选择器遮挡 */
+        /* ========== Windsurf 风格 Agent 输出 ========== */
+        #agentOutput {
+            background: #252526;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
         }
 
-        .mode-selector-wrapper {
-            position: absolute;
-            bottom: 8px;
-            left: 8px;
-            z-index: 100;
-        }
-
-        .mode-selector-btn {
+        .agent-output-header {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+
+        .output-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #cccccc;
+        }
+
+        .streaming-badge {
+            font-size: 12px;
+            color: #4ec9b0;
+        }
+
+        #agentOutputContent {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        /* 滚动条样式 */
+        #agentOutputContent::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #agentOutputContent::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        #agentOutputContent::-webkit-scrollbar-thumb {
+            background: #3c3c3c;
+            border-radius: 4px;
+        }
+
+        #agentOutputContent::-webkit-scrollbar-thumb:hover {
+            background: #505050;
+        }
+
+        /* 思考链 - 可折叠 (Windsurf 风格) */
+        .thought-item {
+            background: #1e1e1e;
+            border-left: 3px solid #007acc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .thought-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .thought-header:hover {
+            background: #2d2d30;
+        }
+
+        .thought-title {
+            font-size: 13px;
+            color: #858585;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .expand-icon {
+            transition: transform 0.2s;
+            font-size: 10px;
+            color: #858585;
+        }
+
+        .thought-item.expanded .expand-icon {
+            transform: rotate(90deg);
+        }
+
+        .thought-duration {
+            color: #858585;
+            font-size: 12px;
+        }
+
+        .thought-content {
+            padding: 0 12px 12px 28px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #d4d4d4;
+            display: none;
+        }
+
+        .thought-item.expanded .thought-content {
+            display: block;
+        }
+
+        /* 工具调用 */
+        .tool-call-item {
+            background: #1e1e1e;
+            border-left: 3px solid #4ec9b0;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+        }
+
+        .tool-label {
+            color: #4ec9b0;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .tool-command {
+            color: #ce9178;
+            line-height: 1.4;
+        }
+
+        /* 工具结果 */
+        .tool-result-item {
+            background: #1e1e1e;
+            border-left: 3px solid #6a9955;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+        }
+
+        .tool-result-item.error {
+            border-left-color: #f48771;
+        }
+
+        .result-label {
+            color: #6a9955;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .result-label.error {
+            color: #f48771;
+        }
+
+        .result-content {
+            color: #d4d4d4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* 最终结果卡片 - 深色主题 */
+        .result-card {
+            background: #2d2d30;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+
+        .result-card h3 {
+            font-size: 14px;
+            color: #4ec9b0;
+            margin-bottom: 10px;
+        }
+
+        .result-card .content {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #d4d4d4;
+        }
+
+        .success-badge {
+            display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 10px;
-            background: rgba(255, 255, 255, 0.98);
-            border: 1px solid #d0d0d0;
-            border-radius: 6px;
-            cursor: pointer;
+            background: #0e7c3c;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
             font-size: 12px;
-            color: #333;
-            transition: all 0.2s;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            margin-top: 15px;
         }
 
-        .mode-selector-btn:hover {
-            background: #f8f8f8;
-            border-color: #667eea;
+        .btn-primary {
+            background: #0e639c !important;
+            color: white !important;
         }
 
-        .mode-text {
-            font-weight: 600;
-            color: #333;
+        .btn-primary:hover:not(:disabled) {
+            background: #1177bb !important;
         }
 
-        .model-text {
-            color: #666;
-            font-size: 11px;
+        .btn-secondary {
+            background: #3c3c3c !important;
+            color: #d4d4d4 !important;
+            border: 1px solid #454545 !important;
         }
 
-        .mode-dropdown {
-            position: absolute;
-            bottom: 100%;
-            left: 0;
-            margin-bottom: 8px;
-            min-width: 280px;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            display: none;
-            z-index: 1000;
-        }
-
-        .mode-dropdown.show {
-            display: block;
-            animation: slideUp 0.2s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .dropdown-section {
-            padding: 8px;
-        }
-
-        .dropdown-label {
-            padding: 8px 12px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .dropdown-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .dropdown-option:hover {
-            background: #f5f5f5;
-        }
-
-        .dropdown-option.active {
-            background: #f0f0ff;
-        }
-
-        .option-content {
-            flex: 1;
-        }
-
-        .option-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 2px;
-        }
-
-        .option-desc {
-            font-size: 11px;
-            color: #888;
-        }
-
-        .check-icon {
-            flex-shrink: 0;
-        }
-
-        .check-icon.hidden {
-            opacity: 0;
-        }
-
-        .dropdown-divider {
-            height: 1px;
-            background: #e8e8e8;
-            margin: 4px 0;
+        .btn-secondary:hover:not(:disabled) {
+            background: #505050 !important;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🤖 AIOps RAG Demo</h1>
-            <p>基于 RAG + 本地大模型的智能运维故障诊断系统</p>
+            <h1>🚀 AIOps Agent Demo</h1>
+            <div class="selectors">
+                <div class="selector-group">
+                    <span class="selector-label">模式:</span>
+                    <select id="modeSelector">
+                        <option value="chat">💬 Chat (RAG)</option>
+                        <option value="agent" selected>🤖 Agent (Tool Calling)</option>
+                    </select>
+                </div>
+                <div class="selector-group">
+                    <span class="selector-label">模型:</span>
+                    <select id="modelSelector">
+                        <option value="qwen-32b" selected>Qwen-32B</option>
+                    </select>
+                </div>
+            </div>
         </header>
 
         <div class="main-card">
@@ -404,67 +507,6 @@
 java.lang.OutOfMemoryError: Java heap space
     at java.util.Arrays.copyOf(Arrays.java:3332)
     at java.util.ArrayList.grow(ArrayList.java:275)"></textarea>
-                    
-                    <!-- Cursor 风格的模式选择器（左下角） -->
-                    <div class="mode-selector-wrapper">
-                        <button class="mode-selector-btn" onclick="toggleModeMenu()" id="modeSelectorBtn">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                            <span class="mode-text">Chat</span>
-                            <span class="model-text">Qwen-32B</span>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-                        
-                        <!-- 下拉菜单 -->
-                        <div class="mode-dropdown" id="modeDropdown">
-                            <div class="dropdown-section">
-                                <div class="dropdown-label">诊断模式</div>
-                                <div class="dropdown-option" onclick="selectMode('chat')">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                    </svg>
-                                    <div class="option-content">
-                                        <div class="option-title">Chat</div>
-                                        <div class="option-desc">基于知识库检索和 LLM 推理</div>
-                                    </div>
-                                    <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="3">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                </div>
-                                <div class="dropdown-option" onclick="selectMode('agent')">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 2v6m0 12v2m9-11h-2M5 11H3m15.364-6.364l-1.414 1.414M6.05 17.95l-1.414 1.414m12.728 0l-1.414-1.414M6.05 6.05L4.636 4.636"></path>
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                    </svg>
-                                    <div class="option-content">
-                                        <div class="option-title">Agent</div>
-                                        <div class="option-desc">自动执行 SSH 诊断命令</div>
-                                    </div>
-                                    <svg class="check-icon hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="3">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                </div>
-                            </div>
-                            
-                            <div class="dropdown-divider"></div>
-                            
-                            <div class="dropdown-section">
-                                <div class="dropdown-label">LLM 模型</div>
-                                <div class="dropdown-option active">
-                                    <div class="option-content">
-                                        <div class="option-title">Qwen-32B</div>
-                                        <div class="option-desc">192.168.20.67:3000</div>
-                                    </div>
-                                    <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="3">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="example-buttons">
@@ -482,6 +524,15 @@ java.lang.OutOfMemoryError: Java heap space
                 <button class="btn-secondary" onclick="clearAll()">
                     🗑️ 清空
                 </button>
+            </div>
+
+            <!-- Agent 输出区域 (Windsurf 风格) -->
+            <div id="agentOutput" style="display: none;">
+                <div class="agent-output-header">
+                    <span class="output-title">Real-time Agent Output</span>
+                    <span class="streaming-badge" id="streamingStatus">⚡ Streaming</span>
+                </div>
+                <div id="agentOutputContent"></div>
             </div>
 
             <div class="loading" id="loading">
@@ -549,71 +600,21 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
 
         function clearAll() {
             document.getElementById('errorLog').value = '';
+            document.getElementById('agentOutput').style.display = 'none';
+            document.getElementById('agentOutputContent').innerHTML = '';
             document.getElementById('resultSection').classList.remove('show');
+            document.getElementById('diagnosis').innerHTML = '';
+            document.getElementById('rootCause').innerHTML = '';
+            document.getElementById('solution').innerHTML = '';
+            thoughtCounter = 0;
         }
 
-        // 当前选中的模式
-        let currentMode = 'chat';
+        // ========== 全局变量 ==========
+        let thoughtCounter = 0;  // 思考链计数器
+        let currentThought = null;  // 当前思考链
+        let thoughtStartTime = null;  // 思考开始时间
 
-        // 切换下拉菜单显示/隐藏
-        function toggleModeMenu() {
-            const dropdown = document.getElementById('modeDropdown');
-            dropdown.classList.toggle('show');
-        }
-
-        // 选择模式
-        function selectMode(mode) {
-            currentMode = mode;
-            
-            // 更新按钮显示
-            const modeText = document.querySelector('.mode-text');
-            const modeIcon = document.querySelector('.mode-selector-btn svg:first-child');
-            
-            if (mode === 'chat') {
-                modeText.textContent = 'Chat';
-                modeIcon.innerHTML = '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>';
-            } else {
-                modeText.textContent = 'Agent';
-                modeIcon.innerHTML = '<path d="M12 2v6m0 12v2m9-11h-2M5 11H3m15.364-6.364l-1.414 1.414M6.05 17.95l-1.414 1.414m12.728 0l-1.414-1.414M6.05 6.05L4.636 4.636"></path><circle cx="12" cy="12" r="3"></circle>';
-            }
-            
-            // 更新选项卡的选中状态
-            const options = document.querySelectorAll('.dropdown-option');
-            options.forEach((opt, idx) => {
-                if (idx === 0) { // Chat
-                    if (mode === 'chat') {
-                        opt.classList.add('active');
-                        opt.querySelector('.check-icon').classList.remove('hidden');
-                    } else {
-                        opt.classList.remove('active');
-                        opt.querySelector('.check-icon').classList.add('hidden');
-                    }
-                } else if (idx === 1) { // Agent
-                    if (mode === 'agent') {
-                        opt.classList.add('active');
-                        opt.querySelector('.check-icon').classList.remove('hidden');
-                    } else {
-                        opt.classList.remove('active');
-                        opt.querySelector('.check-icon').classList.add('hidden');
-                    }
-                }
-            });
-            
-            // 关闭下拉菜单
-            toggleModeMenu();
-        }
-
-        // 点击外部关闭菜单
-        document.addEventListener('click', function(event) {
-            const wrapper = document.querySelector('.mode-selector-wrapper');
-            const dropdown = document.getElementById('modeDropdown');
-            
-            if (wrapper && !wrapper.contains(event.target) && dropdown.classList.contains('show')) {
-                dropdown.classList.remove('show');
-            }
-        });
-
-        // 流式诊断函数（Cursor 风格）
+        // ========== 流式诊断函数 ==========
         async function diagnose() {
             const errorLog = document.getElementById('errorLog').value.trim();
             
@@ -622,20 +623,31 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
                 return;
             }
 
-            // 显示加载和思考区域
-            document.getElementById('loading').classList.add('show');
+            // 显示 Agent 输出区域，不显示loading
+            document.getElementById('loading').classList.remove('show');
             document.getElementById('resultSection').classList.remove('show');
             document.getElementById('diagnoseBtn').disabled = true;
             
-            // 清空之前的结果和思考盒子
+            // 清空并显示 Agent 输出区域
+            const agentOutput = document.getElementById('agentOutput');
+            const agentContent = document.getElementById('agentOutputContent');
+            agentContent.innerHTML = '';
+            agentOutput.style.display = 'block';
+            document.getElementById('streamingStatus').textContent = '⚡ Streaming';
+            document.getElementById('streamingStatus').style.color = '#4ec9b0';
+            thoughtCounter = 0;
+            currentThought = null;
+            thoughtStartTime = null;
+            
+            // 清空之前的结果
             document.getElementById('diagnosis').innerHTML = '';
             document.getElementById('rootCause').innerHTML = '';
             document.getElementById('solution').innerHTML = '';
-            const oldThinkingBox = document.querySelector('.thinking-box');
-            if (oldThinkingBox) oldThinkingBox.remove();
 
             try {
-                const useTools = (currentMode === 'agent');
+                // 从模式选择器获取模式
+                const mode = document.getElementById('modeSelector').value;
+                const useTools = (mode === 'agent');
                 
                 // 使用 fetch 的流式 API
                 const response = await fetch('/api/diagnose/stream', {
@@ -689,53 +701,83 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
             }
         }
 
-        // 处理流式事件（Cursor 风格 - 完整版）
+        // ========== Windsurf 风格事件处理 ==========
         function handleStreamEvent(data) {
+            const agentOutput = document.getElementById('agentOutput');
+            const agentContent = document.getElementById('agentOutputContent');
+
             if (data.type === 'thinking') {
-                // 显示思考过程（独立的思考盒子）
-                let thinkingBox = document.querySelector('.thinking-box');
-                if (!thinkingBox) {
-                    thinkingBox = document.createElement('div');
-                    thinkingBox.className = 'thinking-box';
-                    thinkingBox.style.cssText = `
-                        background: #f8f9fa;
-                        border-left: 4px solid #667eea;
-                        padding: 15px;
-                        margin: 20px 0;
-                        border-radius: 8px;
-                        font-family: monospace;
-                        font-size: 13px;
-                        color: #555;
-                        white-space: pre-wrap;
-                        max-height: 300px;
-                        overflow-y: auto;
+                // 如果还没有当前思考链，创建新的
+                if (!currentThought || currentThought.dataset.completed === 'true') {
+                    thoughtStartTime = Date.now();
+                    const thoughtId = `thought-${++thoughtCounter}`;
+                    const thoughtDiv = document.createElement('div');
+                    thoughtDiv.className = 'thought-item';
+                    thoughtDiv.id = thoughtId;
+                    thoughtDiv.dataset.completed = 'false';
+                    thoughtDiv.innerHTML = `
+                        <div class="thought-header" onclick="toggleThought('${thoughtId}')">
+                            <div class="thought-title">
+                                <span class="expand-icon">▶</span>
+                                <span>Thought</span>
+                            </div>
+                            <span class="thought-duration">思考中...</span>
+                        </div>
+                        <div class="thought-content"></div>
                     `;
                     
-                    // 插入到主容器顶部
-                    const mainCard = document.querySelector('.main-card');
-                    const inputSection = document.querySelector('.input-section');
-                    mainCard.insertBefore(thinkingBox, inputSection.nextSibling);
+                    agentContent.appendChild(thoughtDiv);
+                    currentThought = thoughtDiv;
                 }
-                thinkingBox.textContent += data.content + '\n';
-                thinkingBox.scrollTop = thinkingBox.scrollHeight; // 自动滚动到底部
+                
+                // 追加内容到当前思考链
+                const contentDiv = currentThought.querySelector('.thought-content');
+                const line = document.createElement('div');
+                line.textContent = data.content;
+                line.style.marginBottom = '4px';
+                contentDiv.appendChild(line);
+                
+                agentContent.scrollTop = agentContent.scrollHeight;
                 
             } else if (data.type === 'tool_call') {
-                // Agent 模式：显示工具调用
-                const thinkingBox = document.querySelector('.thinking-box');
-                if (thinkingBox) {
-                    const cmd = data.args.command || JSON.stringify(data.args);
-                    thinkingBox.textContent += `\n🔧 执行命令: ${cmd}\n`;
-                    thinkingBox.scrollTop = thinkingBox.scrollHeight;
+                // 标记当前思考链完成
+                if (currentThought && currentThought.dataset.completed !== 'true') {
+                    currentThought.dataset.completed = 'true';
+                    const duration = ((Date.now() - thoughtStartTime) / 1000).toFixed(1);
+                    const durationSpan = currentThought.querySelector('.thought-duration');
+                    if (durationSpan) {
+                        durationSpan.textContent = `for ${duration}s`;
+                        durationSpan.style.color = '#6a9955';
+                    }
                 }
                 
+                // 工具调用
+                const cmd = data.args.command || JSON.stringify(data.args);
+                const toolCallDiv = document.createElement('div');
+                toolCallDiv.className = 'tool-call-item';
+                toolCallDiv.innerHTML = `
+                    <div class="tool-label">🔧 执行命令</div>
+                    <div class="tool-command">${escapeHtml(cmd)}</div>
+                `;
+                
+                agentContent.appendChild(toolCallDiv);
+                agentContent.scrollTop = agentContent.scrollHeight;
+                
             } else if (data.type === 'tool_result') {
-                // Agent 模式：显示工具结果
-                const thinkingBox = document.querySelector('.thinking-box');
-                if (thinkingBox) {
-                    const result = data.content.substring(0, 300); // 显示前300字符
-                    thinkingBox.textContent += `✓ 命令结果:\n${result}\n`;
-                    thinkingBox.scrollTop = thinkingBox.scrollHeight;
-                }
+                // 工具结果
+                const success = data.success !== false;
+                const content = data.content || '';
+                const displayContent = content.length > 500 ? content.substring(0, 500) + '...' : content;
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `tool-result-item ${success ? '' : 'error'}`;
+                resultDiv.innerHTML = `
+                    <div class="result-label ${success ? '' : 'error'}">${success ? '✓' : '✗'} 命令结果</div>
+                    <div class="result-content">${escapeHtml(displayContent)}</div>
+                `;
+                
+                agentContent.appendChild(resultDiv);
+                agentContent.scrollTop = agentContent.scrollHeight;
                 
             } else if (data.type === 'llm_chunk') {
                 // LLM 流式输出（打字机效果）
@@ -808,14 +850,36 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
                 }
                 
             } else if (data.type === 'done') {
-                // 诊断完成，可以选择保留或移除思考盒子
-                // 这里保留思考过程，让用户可以回顾
-                const thinkingBox = document.querySelector('.thinking-box');
-                if (thinkingBox) {
-                    thinkingBox.style.borderColor = '#28a745'; // 变成绿色表示完成
-                    thinkingBox.textContent += '\n✅ 诊断完成\n';
-                }
+                // 诊断完成 - 添加成功徽章
+                const agentContent = document.getElementById('agentOutputContent');
+                const badge = document.createElement('div');
+                badge.className = 'success-badge';
+                badge.textContent = '✓ 诊断完成';
+                agentContent.appendChild(badge);
+                
+                // 更新状态
+                document.getElementById('streamingStatus').textContent = '✓ Complete';
+                document.getElementById('streamingStatus').style.color = '#6a9955';
+                
+                // 确保隐藏loading并重新启用按钮
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('diagnoseBtn').disabled = false;
             }
+        }
+
+        // 切换思考链展开/折叠
+        function toggleThought(thoughtId) {
+            const thought = document.getElementById(thoughtId);
+            if (thought) {
+                thought.classList.toggle('expanded');
+            }
+        }
+
+        // HTML 转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function displayCases(cases) {
